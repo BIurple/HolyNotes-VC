@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 import "./style.css";
 
@@ -66,7 +66,6 @@ function ToolBarHeader() {
     );
 }
 
-
 export default definePlugin({
     name: "HolyNotes",
     description: "Holy Notes allows you to save messages",
@@ -108,16 +107,14 @@ export default definePlugin({
             e.toolbar,
         ];
     },
-    async start() {
-        // 1. Ensure the default notebook exists in persistent storage
-        const existingKeys = await DataStore.keys(HolyNoteStore);
-        if (!existingKeys.includes("Main")) {
-            await noteHandler.newNoteBook("Main");
-        }
 
-        // 2. Load stored notes into memory cache
+    async start() {
+        // 1. Unconditionally hydrate all notebooks from DataStore into cache first
+        await DataStoreToCache();
+
+        // 2. Create the default "Main" notebook only if it doesn't already exist
         if (!noteHandlerCache.has("Main")) {
-            await DataStoreToCache();
+            await noteHandler.newNoteBook("Main", true);
         }
 
         // 3. Register the popover button
