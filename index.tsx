@@ -109,9 +109,18 @@ export default definePlugin({
         ];
     },
     async start() {
-        if (await DataStore.keys(HolyNoteStore).then(keys => !keys.includes("Main"))) return noteHandler.newNoteBook("Main");
-        if (!noteHandlerCache.has("Main")) await DataStoreToCache();
+        // 1. Ensure the default notebook exists in persistent storage
+        const existingKeys = await DataStore.keys(HolyNoteStore);
+        if (!existingKeys.includes("Main")) {
+            await noteHandler.newNoteBook("Main");
+        }
 
+        // 2. Load stored notes into memory cache
+        if (!noteHandlerCache.has("Main")) {
+            await DataStoreToCache();
+        }
+
+        // 3. Register the popover button
         addMessagePopoverButton("HolyNotes", message => {
             return {
                 label: "Save Note",
