@@ -13,31 +13,54 @@ import { HolyNotes } from "./types";
 
 export const HolyNoteStore = createStore("HolyNoteData", "HolyNoteStore");
 
-export async function saveCacheToDataStore(key: string, value?: HolyNotes.Note[]) {
-    await DataStore.set(key, value, HolyNoteStore);
+export async function saveCacheToDataStore(key: string, value: Record<string, HolyNotes.Note>) {
+    try {
+        await DataStore.set(key, value, HolyNoteStore);
+    } catch (err) {
+        console.error("[HolyNotes] Failed to save note to DataStore:", err);
+    }
 }
 
 export async function deleteCacheFromDataStore(key: string) {
-    await DataStore.del(key, HolyNoteStore);
+    try {
+        await DataStore.del(key, HolyNoteStore);
+    } catch (err) {
+        console.error("[HolyNotes] Failed to delete key from DataStore:", err);
+    }
 }
 
-export async function getFormatedEntries() {
-    const data = await DataStore.entries(HolyNoteStore);
-    const notebooks: Record<string, HolyNotes.Note> = {};
+export async function getFormatedEntries(): Promise<Record<string, Record<string, HolyNotes.Note>>> {
+    try {
+        const data = await DataStore.entries(HolyNoteStore);
+        const notebooks: Record<string, Record<string, HolyNotes.Note>> = {};
 
-    data.forEach(function (note) {
-        notebooks[note[0].toString()] = note[1];
-    });
-
-    return notebooks;
+        if (Array.isArray(data)) {
+            data.forEach(([key, value]) => {
+                if (key) {
+                    notebooks[String(key)] = value ?? {};
+                }
+            });
+        }
+        return notebooks;
+    } catch (err) {
+        console.error("[HolyNotes] Failed to format entries:", err);
+        return {};
+    }
 }
 
 export async function DataStoreToCache() {
-    const data = await DataStore.entries(HolyNoteStore);
-
-    data.forEach(function (note) {
-        noteHandlerCache.set(note[0].toString(), note[1]);
-    });
+    try {
+        const data = await DataStore.entries(HolyNoteStore);
+        if (Array.isArray(data)) {
+            data.forEach(([key, value]) => {
+                if (key) {
+                    noteHandlerCache.set(String(key), value ?? {});
+                }
+            });
+        }
+    } catch (err) {
+        console.error("[HolyNotes] Failed to load DataStore to cache:", err);
+    }
 }
 
 export async function DeleteEntireStore() {
